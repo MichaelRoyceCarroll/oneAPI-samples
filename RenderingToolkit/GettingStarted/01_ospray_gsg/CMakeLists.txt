@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.1)
 project(OSPRAY_GSG LANGUAGES CXX)
 
+include(GNUInstallDirs)
+
 set(ONEAPI_ROOT "")
 if(DEFINED ENV{ONEAPI_ROOT})
   set(ONEAPI_ROOT "$ENV{ONEAPI_ROOT}")
