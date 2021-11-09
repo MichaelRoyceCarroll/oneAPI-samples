@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.1)
 project(OSPRAY_GSG LANGUAGES CXX)
 
 set(ONEAPI_ROOT "")
