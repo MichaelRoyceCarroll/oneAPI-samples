@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.1)
 project(OIDN_GSG LANGUAGES C CXX)
 
 set(ONEAPI_ROOT "")
