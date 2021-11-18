@@ -47,7 +47,7 @@ cd build
 cmake ..
 cmake --build . --config Release
 cd Release
-vklTutorial.exe
+.\vklTutorial.exe
 ```
 
 Review the terminal output (stdout)
