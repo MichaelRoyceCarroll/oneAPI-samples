@@ -24,7 +24,7 @@ This sample program, `minimal`, performs two ray to triangle intersect tests wit
 
 ## Key Implementation Details
 
-This source code is constructed to build with a C++ or a C compiler.
+This source code is constructed to build with a C++11 or a C99 compiler.
 
 ## License
 
@@ -41,13 +41,13 @@ Run a new **x64 Native Tools Command Prompt for MSVS 2019**
 
 ```
 call <path-to-oneapi-folder>\setvars.bat
-cd <path-to-oneAPI-samples>\RenderingToolkit\02_embree_gsg
+cd <path-to-oneAPI-samples>\RenderingToolkit\GettingStarted\02_embree_gsg
 mkdir build
 cd build
 cmake ..
 cmake --build . --config Release
 cd Release
-minimal.exe
+.\minimal.exe
 ```
 
 Review the terminal output (stdout)
@@ -58,7 +58,7 @@ Review the terminal output (stdout)
 Start a new Terminal session
 ```
 source <path-to-oneapi-folder>/setvars.sh
-cd <path-to-oneAPI-samples>/RenderingToolkit/02_embree_gsg
+cd <path-to-oneAPI-samples>/RenderingToolkit/GettingStarted/02_embree_gsg
 mkdir build
 cd build
 cmake ..
@@ -75,7 +75,7 @@ Start a new Terminal session
 
 ```
 source <path-to-oneapi-folder>/setvars.sh
-cd <path-to-oneAPI-samples>/RenderingToolkit/02_embree_gsg
+cd <path-to-oneAPI-samples>/RenderingToolkit/GettingStarted/02_embree_gsg
 mkdir build
 cd build
 cmake ..
