@@ -8,7 +8,7 @@ Intel OSPRay is an open source, scalable, and portable ray tracing engine for hi
 | Hardware                          | Intel 64 Penryn or newer with SSE4.1 extensions, ARM64 with NEON extensions
 | Compiler Toolchain                | Windows* OS: MSVS 2019 installed with Windows* SDK and CMake*; Other platforms: C++11 compiler, a C99 compiler (ex: gcc/c++/clang), and CMake*
 | Libraries                         | Install Intel oneAPI Rendering Toolkit including OSPRay, Embree, Open Volume Kernel Library, Intel Open Image Denoise
-| Image Display Tool                | A .ppm filetype viewer. Ex: [ImageMagick](https://www.imagemagick.org)
+| Image Display Tool                | A .ppm filetype viewer. Ex: [ImageMagick](https://www.imagemagick.org), or MacOS Preview
 
 | Optimized Requirements            | Description
 | :---                              | :---
@@ -53,7 +53,7 @@ cd build
 cmake ..
 cmake --build . --config Release
 cd Release
-ospTutorialCpp.exe
+.\ospTutorialCpp.exe
 ```
 
 Review the first output image with a .ppm image viewer. Example using ImageMagick display:
@@ -105,12 +105,12 @@ cmake --build .
 ./ospTutorialCpp
 ```
 
-Review the first output image with a .ppm image viewer. Example using ImageMagick display:
+Review the first output image with a .ppm image viewer. Example using Preview:
 ```
-<path-to-ImageMagick>/imdisplay firstFrameCpp.ppm
+open firstFrameCpp.ppm
 ```
 
-Review the accumulated output image with a .ppm image viewer. Example using ImageMagick display:
+Review the accumulated output image with a .ppm image viewer. Example using Preview:
 ```
-<path-to-ImageMagick>/imdisplay accumulatedFrameCpp.ppm
+open accumulatedFrameCpp.ppm
 ```
