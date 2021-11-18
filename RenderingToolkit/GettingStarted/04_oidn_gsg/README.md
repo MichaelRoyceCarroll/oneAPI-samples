@@ -9,7 +9,7 @@ Intel Open Image Denoise is an open source library of high-performance, high-qua
 | Hardware                          | Intel 64 Penryn or newer with SSE4.1 extensions, ARM64 with NEON extensions
 | Compiler Toolchain                | Windows* OS: MSVS 2019 installed with Windows* SDK and CMake*; Other platforms: C++11 compiler, a C99 compiler (ex: gcc/c++/clang), and CMake*
 | Libraries                         | Install Intel oneAPI Rendering Toolkit including OSPRay, Embree, Open Volume Kernel Library, Intel Open Image Denoise
-| Image Display Tool                | A .ppm filetype viewer. Ex: [ImageMagick](https://www.imagemagick.org)
+| Image Display Tool                | A .ppm filetype viewer. Ex: [ImageMagick](https://www.imagemagick.org), or MacOS Preview
 | Image Conversion Tool             | A converter for .ppm, .pfm, and endian conversions. Ex: [ImageMagick](https://www.imagemagick.org)
 
 | Optimized Requirements            | Description
@@ -69,7 +69,7 @@ Convert the accumulatedFrameCpp.ppm image to LSB data ordering and .pfm format. 
 Denoise the image:
 
 ```
-oidnDenoise.exe -hdr accumulatedFrameCpp.pfm -o denoised.pfm
+.\oidnDenoise.exe -hdr accumulatedFrameCpp.pfm -o denoised.pfm
 ```
 
 Review the output for visual comparison to the input. Example view with ImageMagick display:
@@ -133,8 +133,8 @@ Denoise the image:
 ./oidnDenoise -hdr accumulatedFrameCpp.pfm -o denoised.pfm
 ```
 
-Review the output for visual comparison to the input. Example view with ImageMagick display:
+Review the output for visual comparison to the input. Example view with the Preview image viewer:
 
 ```
-<path-to-ImageMagick>/imdisplay denoised.pfm
+open denoised.pfm
 ```
