@@ -14,6 +14,9 @@
                 {
   		"id": "Intel_OSPRay_ospTutorial_lin",
   		"steps": [
+		    "source /opt/intel/renderkit/ospray/rk-ospray-vars.sh",
+                    "source /opt/intel/renderkit/rkcommon/rk-rkcommon-vars.sh",
+                    "source /opt/intel/renderkit/tbb/rk-tbb-vars.sh",
                     "unset ZE_FLAT_DEVICE_HIERARCHY",
                     "mkdir build",
                     "cd build",
@@ -46,11 +49,14 @@
                 {
                 "id": "Intel_OSPRay_ospTutorial_mac",
                 "steps": [
+		    "source /opt/intel/renderkit/ospray/rk-ospray-vars.sh",
+                    "source /opt/intel/renderkit/rkcommon/rk-rkcommon-vars.sh",
+                    "source /opt/intel/renderkit/tbb/rk-tbb-vars.sh",
                     "mkdir build",
                     "cd build",
                     "cmake ..",
                     "cmake --build . ",
-                    "export DYLD_LIBRARY_PATH=${ONEAPI_ROOT}/openvkl/latest/lib:${ONEAPI_ROOT}/rkcommon/latest/lib:${ONEAPI_ROOT}/rkcommon/latest/etc/rkcommon/tbb/lib:${ONEAPI_ROOT}/embree/latest/lib:${ONEAPI_ROOT}/oidn/latest/lib:${ONEAPI_ROOT}/ispc/latest/lib:${ONEAPI_ROOT}/ospray/latest/lib && ./ospTutorialCpp"
+                    "export DYLD_LIBRARY_PATH=/opt/intel/renderkit/rkcommon/lib:${ONEAPI_ROOT}/ospray/lib && ./ospTutorialCpp"
                  ]
                  }
         ]

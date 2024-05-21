@@ -11,11 +11,6 @@ ISPC_VERSION=1.23.0
 OSPRAY_VERSION=3.1.0
 OSPRAYSTUDIO_VERSION=1.0.0
 TBB_DOWNLOAD_VERSION=2021.11.0
-#      if (APPLE)
-#        set(TBB_HASH "360bcb20bcdcd01e8492c32bba6d5d5baf4bc83f77fb9dbf1ff701ac816e3b44")
-#      elseif (WIN32)
-#        set(TBB_HASH "02f0e93600fba69bb1c00e5dd3f66ae58f56e5410342f6155455a95ba373b1b6")
-#      else()
 
 #URL Base
 GITHUB_BASE_URL=https://github.com/RenderKit
@@ -161,7 +156,7 @@ for (( DL_IDX=0; DL_IDX<${NUM_COMPONENTS}; DL_IDX++ )); do
         echo "OK   : SHA256SUM of ${FILE_LIST[${DL_IDX}]}" 	  
       fi	
     else
-      echo "ERROR: Bad SHA256SUM of ${FILE_LIST[${DL_IDX}]}... Delete all files and try again" >&2
+      echo "ERROR: Bad SHA256SUM of ${FILE_LIST[${DL_IDX}]}... Delete all files in ${TARGET_DIR}/renderkit and try again" >&2
       exit -1      
     fi
   fi
@@ -631,18 +626,75 @@ read -d '\0' RKCOMMON_VARS_FOOTER <<- EOM
 	
 EOM
 
+read -d '\0' TBB_VARS_FOOTER <<- EOM
+	# ############################################################################
+	TBBROOT=$(get_script_path "${vars_script_name:-}")
+	
+	TBB_TARGET_ARCH="intel64"
+	TBB_ARCH_SUFFIX=""
+	
+	if [ -n "${SETVARS_ARGS:-}" ]; then
+	  tbb_arg_ia32="$(expr "${SETVARS_ARGS:-}" : '^.*\(ia32\)')" || true
+	  if [ -n "${tbb_arg_ia32:-}" ]; then
+	    TBB_TARGET_ARCH="ia32"
+	  fi
+	else
+	  for arg do
+	    case "$arg" in
+	    (intel64|ia32)
+	      TBB_TARGET_ARCH="${arg}"
+	      ;;
+	    (*) ;;
+	    esac
+	  done
+	fi
+	
+	TBB_LIB_NAME="libtbb.so.12"
+	
+	# Parse layout
+	if [ -e "$TBBROOT/lib/$TBB_TARGET_ARCH" ]; then
+	  TBB_LIB_DIR="$TBB_TARGET_ARCH/gcc4.8"
+	else
+	  if [ "$TBB_TARGET_ARCH" = "ia32" ] ; then
+	    TBB_ARCH_SUFFIX="32"
+	  fi
+	  TBB_LIB_DIR=""
+	fi
+	
+	if [ -e "$TBBROOT/lib$TBB_ARCH_SUFFIX/$TBB_LIB_DIR/$TBB_LIB_NAME" ]; then
+	  export TBBROOT
+	
+	  LIBRARY_PATH=$(prepend_path "${TBBROOT}/lib$TBB_ARCH_SUFFIX/$TBB_LIB_DIR" "${LIBRARY_PATH:-}") ; export LIBRARY_PATH
+	  LD_LIBRARY_PATH=$(prepend_path "${TBBROOT}/lib$TBB_ARCH_SUFFIX/$TBB_LIB_DIR" "${LD_LIBRARY_PATH:-}") ; export LD_LIBRARY_PATH
+	  CPATH=$(prepend_path "${TBBROOT}/include" "${CPATH:-}") ; export CPATH
+	  CMAKE_PREFIX_PATH=$(prepend_path "${TBBROOT}" "${CMAKE_PREFIX_PATH:-}") ; export CMAKE_PREFIX_PATH
+	  PKG_CONFIG_PATH=$(prepend_path "${TBBROOT}/lib$TBB_ARCH_SUFFIX/pkgconfig" "${PKG_CONFIG_PATH:-}") ; export PKG_CONFIG_PATH
+	else
+	  >&2 echo "ERROR: $TBB_LIB_NAME library does not exist in $TBBROOT/lib$TBB_ARCH_SUFFIX/$TBB_LIB_DIR."
+	  return 255 2>/dev/null || exit 255
+	fi
+
+	# Get the absolute path to this vars.sh script
+	RENDERKIT_TBB_SCRIPT_PATH=\$(get_script_path "\${vars_script_name:-}")
+	RENDERKIT_TBB_ROOT="\${RENDERKIT_TBB_SCRIPT_PATH}"
+	
+	if [ -d "\${RENDERKIT_TBB_ROOT}/lib" ] ; then
+	    LD_LIBRARY_PATH=\$(prepend_path "\${RENDERKIT_TBB_ROOT}/lib" "\${LD_LIBRARY_PATH:-}") ; export LD_LIBRARY_PATH
+	    CMAKE_PREFIX_PATH=\$(prepend_path "\${RENDERKIT_TBB_ROOT}/lib/cmake/rkcommon" "\${CMAKE_PREFIX_PATH:-}") ; export CMAKE_PREFIX_PATH
+	fi
+	
+	
+	if [ -d "\${RENDERKIT_TBB_ROOT}/lib/pkgconfig" ] ; then
+	    PKG_CONFIG_PATH=\$(prepend_path "\${RENDERKIT_TBB_ROOT}/lib/pkgconfig" "\${PKG_CONFIG_PATH:-}") ; export PKG_CONFIG_PATH
+	fi
+	
+EOM
 # End of script definition section
 
 
-# rkcommon section
+# rkcommon and onetbb section
 
 TBB_DOWNLOAD_VERSION=2021.11.0
-#      if (APPLE)
-#        set(TBB_HASH "360bcb20bcdcd01e8492c32bba6d5d5baf4bc83f77fb9dbf1ff701ac816e3b44")
-#      elseif (WIN32)
-#        set(TBB_HASH "02f0e93600fba69bb1c00e5dd3f66ae58f56e5410342f6155455a95ba373b1b6")
-#      else()
-
 TBB_FILE="oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz"
 TBB_URL="https://github.com/oneapi-src/oneTBB/releases/download/v2021.11.0/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz"
 if [ -d "${TARGET_DIR}/renderkit/tbb" ]; then
@@ -650,29 +702,51 @@ if [ -d "${TARGET_DIR}/renderkit/tbb" ]; then
 fi
 mkdir "${TARGET_DIR}/renderkit/tbb"
 
-if [ "${SILENT_MODE}" -eq "0" ]; then
-  wget -O "${TARGET_DIR}/renderkit/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz" "${TBB_URL}"
-else
-  wget -O "${TARGET_DIR}/renderkit/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz" -q "${TBB_URL}"
-fi
-
+DOWNLOAD=1
 if [ -f "${TARGET_DIR}/renderkit/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz" ]; then
-  echo "${TBB_SHA} ${TARGET_DIR}/renderkit/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz" | sha256sum --check > "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}.chkresult" 2>&1
+  echo "${TBB_SHA} ${TARGET_DIR}/renderkit/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz" | sha256sum --check > "${TARGET_DIR}/renderkit/${TBB_FILE}.chkresult" 2>&1
   if [ $? -eq 0 ]; then
+    DOWNLOAD=0
     if [ "${SILENT_MODE}" -eq "0" ]; then
       echo "OK   : SHA256SUM of ${TBB_FILE}"
     fi
   else
-    echo "ERROR: Bad SHA256SUM of ${TBB_FILE}... Delete all files, check proxy/internet connection, and try again" >&2
+    echo "ERROR: Bad SHA256SUM of ${TBB_FILE}... Delete all files in ${TARGET_DIR}/renderkit, check proxy/internet connection, and try again" >&2
     exit -1
   fi
-else
-  echo "ERROR: Could not download ${TBB_FILE}... Check proxy/internet connection" >&2
-  exit -1
 fi
 
-#no strip
-EXTRACTSTRIP_DIR=
+if [ ${DOWNLOAD} -eq 1 ]; then
+  if [ "${SILENT_MODE}" -eq "0" ]; then
+    echo "STATUS: Downloading ${TBB_FILE}.."
+  fi
+
+
+  if [ "${SILENT_MODE}" -eq "0" ]; then
+    wget -O "${TARGET_DIR}/renderkit/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz" "${TBB_URL}"
+  else
+    wget -O "${TARGET_DIR}/renderkit/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz" -q "${TBB_URL}"
+  fi
+  
+  if [ -f "${TARGET_DIR}/renderkit/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz" ]; then
+    echo "${TBB_SHA} ${TARGET_DIR}/renderkit/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz" | sha256sum --check > "${TARGET_DIR}/renderkit/${TBB_FILE}.chkresult" 2>&1
+    if [ $? -eq 0 ]; then
+      if [ "${SILENT_MODE}" -eq "0" ]; then
+        echo "OK   : SHA256SUM of ${TBB_FILE}"
+      fi
+    else
+      echo "ERROR: Bad SHA256SUM of ${TBB_FILE}... Delete all files in ${TARGET_DIR}/renderkit, check proxy/internet connection, and try again" >&2
+      exit -1
+    fi
+  else
+    echo "ERROR: Could not download ${TBB_FILE}... Check proxy/internet connection" >&2
+    exit -1
+  fi
+fi
+
+
+#strip
+EXTRACTSTRIP_DIR=--strip-components=1
 if [ "${SILENT_MODE}" -eq "0" ]; then
   tar -xvf "${TARGET_DIR}/renderkit/oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz" -C "${TARGET_DIR}/renderkit/tbb" ${EXTRACTSTRIP_DIR} | sed 's/^/  /g'
   echo "OK   : oneapi-tbb-${TBB_DOWNLOAD_VERSION}-lin.tgz extracted"
@@ -683,31 +757,54 @@ fi
 RKCOMMON_DOWNLOAD_VERSION=1.13.0
 RKCOMMON_FILE=v${RKCOMMON_DOWNLOAD_VERSION}.tar.gz
 RKCOMMON_URL="https://github.com/ospray/rkcommon/archive/refs/tags/${RKCOMMON_FILE}"
+
+DOWNLOAD=1
+if [ -f "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}" ]; then
+  echo "${RKCOMMON_SRC_SHA} ${TARGET_DIR}/renderkit/${RKCOMMON_FILE}" | sha256sum --check > "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}.chkresult" 2>&1
+  if [ $? -eq 0 ]; then
+    DOWNLOAD=0
+    if [ "${SILENT_MODE}" -eq "0" ]; then
+      echo "OK   : SHA256SUM of ${RKCOMMON_FILE}"
+    fi
+  else
+    echo "ERROR: Bad SHA256SUM of ${RKCOMMON_FILE}... Delete all files in ${TARGET_DIR}/renderkit, check proxy/internet connection, and try again" >&2
+    exit -1
+  fi
+fi
+
+
 if [ -d "${TARGET_DIR}/renderkit/rkcommon-src" ]; then
   rm -rf "${TARGET_DIR}/renderkit/rkcommon-src"
 fi
 mkdir "${TARGET_DIR}/renderkit/rkcommon-src"
 
-if [ "${SILENT_MODE}" -eq "0" ]; then
-  wget -O "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}" "${RKCOMMON_URL}"
-else
-  wget -O "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}" -q "${RKCOMMON_URL}"
-fi
+if [ ${DOWNLOAD} -eq 1 ]; then
+  if [ "${SILENT_MODE}" -eq "0" ]; then
+    echo "STATUS: Downloading ${RKCOMMON_FILE}..."
+  fi
 
-if [ -f "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}" ]; then
-  echo "${RKCOMMON_SRC_SHA} ${TARGET_DIR}/renderkit/${RKCOMMON_FILE}" | sha256sum --check > "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}.chkresult" 2>&1
-  if [ $? -eq 0 ]; then
-    if [ "${SILENT_MODE}" -eq "0" ]; then
-      echo "OK   : SHA256SUM of ${RKCOMMON_FILE}"
+
+  if [ "${SILENT_MODE}" -eq "0" ]; then
+    wget -O "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}" "${RKCOMMON_URL}"
+  else
+    wget -O "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}" -q "${RKCOMMON_URL}"
+  fi
+  
+  if [ -f "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}" ]; then
+    echo "${RKCOMMON_SRC_SHA} ${TARGET_DIR}/renderkit/${RKCOMMON_FILE}" | sha256sum --check > "${TARGET_DIR}/renderkit/${RKCOMMON_FILE}.chkresult" 2>&1
+    if [ $? -eq 0 ]; then
+      if [ "${SILENT_MODE}" -eq "0" ]; then
+        echo "OK   : SHA256SUM of ${RKCOMMON_FILE}"
+      fi
+    else
+      echo "ERROR: Bad SHA256SUM of ${RKCOMMON_FILE}... Delete all files in ${TARGET_DIR}/renderkit and try again" >&2
+      exit -1
     fi
   else
-    echo "ERROR: Bad SHA256SUM of ${RKCOMMON_FILE}]}... Delete all files and try again" >&2
-    exit -1
+    echo "ERROR: Could not download ${RKCOMMON_FILE}... Check proxy/internet connection" >&2
   fi
-else
-  echo "ERROR: Could not download ${RKCOMMON_FILE}... Check proxy/internet connection" >&2
-fi
 
+fi
 EXTRACTSTRIP_DIR=--strip-components=1
 if [ "${SILENT_MODE}" -eq "0" ]; then
   tar -xvf "${TARGET_DIR}/renderkit/v${RKCOMMON_DOWNLOAD_VERSION}.tar.gz" -C "${TARGET_DIR}/renderkit/rkcommon-src" ${EXTRACTSTRIP_DIR} | sed 's/^/  /g'
@@ -781,5 +878,6 @@ echo -e "${VARS_HEADER}\n${ISPC_VARS_FOOTER}" > "${TARGET_DIR}/renderkit/ispc/rk
 echo -e "${VARS_HEADER}\n${OSPRAY_VARS_FOOTER}" > "${TARGET_DIR}/renderkit/ospray/rk-ospray-vars.sh"
 echo -e "${VARS_HEADER}\n${OSPRAY_STUDIO_VARS_FOOTER}" > "${TARGET_DIR}/renderkit/ospray-studio/rk-ospray-studio-vars.sh"
 echo -e "${VARS_HEADER}\n${RKCOMMON_VARS_FOOTER}" > "${TARGET_DIR}/renderkit/rkcommon/rk-rkcommon-vars.sh"
+echo -e "${VARS_HEADER}\n${TBB_VARS_FOOTER}" > "${TARGET_DIR}/renderkit/tbb/rk-tbb-vars.sh"
 
 # EOF

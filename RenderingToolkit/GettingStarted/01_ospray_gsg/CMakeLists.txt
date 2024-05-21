@@ -1,26 +1,22 @@
 cmake_minimum_required(VERSION 3.16)
 project(OSPRAY_GSG LANGUAGES CXX)
 
-set(ONEAPI_ROOT "")
-if(DEFINED ENV{ONEAPI_ROOT})
-  set(ONEAPI_ROOT "$ENV{ONEAPI_ROOT}")
-  message(STATUS "ONEAPI_ROOT FROM ENVIRONMENT: ${ONEAPI_ROOT}")
-else()
-  message(FATAL_ERROR "ONEAPI_ROOT NOT set. Please source environment variables.")
-endif(DEFINED ENV{ONEAPI_ROOT})
+# CMakeLists.txt will find required OSPRay build assets from the env files that set CMAKE_PREFIX_PATH
+# Lin/macOS:
+#  source <path/to/renderkit>/ospray/rk-ospray-vars.sh
+#  source <path/to/renderkit>/rkcommon/rk-rkcommon-vars.sh
+#  source <path/to/renderkit>/tbb/rk-onetbb-vars.sh
+# Win:
+#  call <path/to/renderkit>/ospray/rk-ospray-vars.bat
+#  call <path/to/renderkit>/rkcommon/rk-rkcommon-vars.bat
+#  call <path/to/renderkit>/tbb/rk-onetbb-vars.bat
 
-set(RKCOMMON_BASE_PATH "")
-set(OSPRAY_BASE_PATH "")
-if(EXISTS ${ONEAPI_ROOT}/oneapi-vars.sh OR EXISTS ${ONEAPI_ROOT}/oneapi-bars.bat)
-  set(RKCOMMON_BASE_PATH "${ONEAPI_ROOT}")
-  set(OSPRAY_BASE_PATH "${ONEAPI_ROOT}")
-else()
-  set(RKCOMMON_BASE_PATH "${ONEAPI_ROOT}/rkcommon/latest")
-  set(OSPRAY_BASE_PATH "${ONEAPI_ROOT}/ospray/latest")
-endif(EXISTS ${ONEAPI_ROOT}/oneapi-vars.sh OR EXISTS ${ONEAPI_ROOT}/oneapi-bars.bat)
+find_package(ospray REQUIRED)
+
+set(RKCOMMON_BASE_PATH "${OSPRAY_ROOT}/../rkcommon")
 
 list(APPEND CMAKE_PREFIX_PATH "${RKCOMMON_BASE_PATH}")
-find_package(ospray REQUIRED PATHS ${OSPRAY_BASE_PATH})
+find_package(rkcommon REQUIRED PATHS "${RKCOMMON_BASE_PATH}")
 
 if(MSVC)
   set(CMAKE_CXX_STANDARD 11)
@@ -30,7 +26,8 @@ else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif(MSVC)
 
-include_directories(${OSPRAY_INCLUDE_DIR} ${RKCOMMON_INCLUDE_DIRS})
+set(RKCOMMON_INCLUDE_PATH "${RKCOMMON_BASE_PATH}/include")
+include_directories(${OSPRAY_INCLUDE_DIR} ${RKCOMMON_INCLUDE_PATH})
 link_directories(${OSPRAY_ROOT}/lib ${RKCOMMON_BASE_PATH}/lib)
 
 add_executable(ospTutorialCpp ${OSPRAY_RESOURCE} src/ospTutorial.cpp)
